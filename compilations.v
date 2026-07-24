@@ -167,18 +167,18 @@ module clk_divider #(parameter N = 4)(
     reg [31:0] cut;
 
     always @(posedge clk or  negedge rst_n)begin
-    if (!rst_n)begin
-        clk_out<=1'b0;
-        cut <= 0;
-    end
-    else if (cut==(N/2)-1)begin 
-        cut<=0;
-        clk_out<=~clk_out;
+        if (!rst_n)begin
+            clk_out<=1'b0;
+            cut <= 0;
+        end
+        else if (cut==(N/2)-1)begin 
+            cut<=0;
+            clk_out<=~clk_out;
 
-    end
-    else begin 
-    cut=cut+1;
-    end
+        end
+        else begin 
+        cut<=cut+1;
+        end
     end
 endmodule
 
@@ -191,7 +191,7 @@ module single_port_ram(
     output reg [7:0] dout
 
 );
-    reg [7:0] ram[255:0]
+    reg [7:0] ram[255:0];
     always@(posedge clk)begin 
         if (we)begin 
            ram[addr]<= din;
@@ -266,13 +266,16 @@ module pwm_gen(
             pwm_out<=0;
         end 
           
-        else if (cut<duty)begin 
+        else begin
             cut<=cut+1;
-            pwm_out<=1;
-        end
-        else begin 
-            cut<=0;
-            pwm_out <=0;
+            if (cut<duty)begin 
+                
+                pwm_out<=1;
+            end
+            else begin 
+               
+                pwm_out <=0;
+            end
         end
 
     end
