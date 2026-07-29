@@ -1,0 +1,39 @@
+git init
+文件夹仓库初始化，文件夹下生成 .git子文件夹
+
+gitignore
+排除不需要进行git仓库上传的文件。例如 .env  node_m0dules  .next out等等
+
+commit
+每次对代码修改后提交，可以通过checkout查看历史代码，如果想要修改代码就要回到master，
+每次commit都有id，通过提交给ai commit id可以让ai帮助我们进行版本管理，修改某次提交/回到历史提交
+discard    reset  revert
+
+branch
+基于master分支创建new branch（feature），分支修改完成后使用git merge 进行合并修改master
+
+head
+当前仓库处于那一次commit上
+
+workTree
+相当于对主干的一个分支，对worktree进行处理后合并会主干
+
+merge conflict
+分支合并时的冲突
+
+
+git areas
+1.working directory （工作区） 文件夹仓库初始化，文件夹下生成
+local repository （本地仓库） commit后存在本地
+remote repository（远端仓库）  github网站
+
+stash临时存储
+
+git rebase变基
+
+
+git clone 
+git add
+git commit
+git push
+git pull
