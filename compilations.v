@@ -80,7 +80,7 @@ module decoder_2to4(
 );
     always @(*)begin
         if (!en)begin 
-            y=4'b0000
+            y=4'b0000;
         end
         else begin 
             case (a)
@@ -135,6 +135,7 @@ module sequence_detector(
         else begin
             state<= next_state;
         end
+    end
 
     always @(*)begin
         case (state)
@@ -150,7 +151,6 @@ module sequence_detector(
 
     always @(*)begin
         q=(state == s101); 
-    end
     end
 
 endmodule
@@ -240,7 +240,7 @@ module edge_detector(
     always @(posedge clk or negedge rst_n)begin
         
         if (!rst_n)begin 
-            pos_edge<= 0;
+            in1<= 0;
 
         end
         else begin 
@@ -264,6 +264,7 @@ module pwm_gen(
     always @(posedge clk or negedge rst_n) begin
         if (!rst_n)begin 
             pwm_out<=0;
+            cut<=0;
         end 
           
         else begin
@@ -306,7 +307,7 @@ module key_debounce(
     input key,
     input clk,
     input rst_n,
-    output key_out
+    output reg key_out
 );
     reg [3:0] cnt;
     reg key_d;
@@ -317,13 +318,13 @@ module key_debounce(
             key_out <= 0;
             key_d <= 0;
         end else begin
-            key_d <= key_in;
-            if(key_in != key_d) begin
+            key_d <= key;
+            if(key != key_d) begin
                 cnt <= 0;
             end else if(cnt < 10) begin
                 cnt <= cnt + 1;
             end else begin
-                key_out <= key_in;
+                key_out <= key;
             end
         end
     end
@@ -336,35 +337,34 @@ module vending_machine(
     input coin_10,
     output reg despense
 );
-    paramater IDLE=2'b00, s05=2'b01 ,s10=2'b10 ,s15=2'b11;
+    parameter IDLE=2'b00, s05=2'b01 ,s10=2'b10 ,s15=2'b11;
     reg [1:0] state;
 always@(posedge clk or negedge rst_n)begin 
     if(!rst_n)begin
-        state = IDLE;
-        despense=0;
+        state <= IDLE;
+        despense <= 0;
     end
     else begin 
+        despense <= 0;
         case (state)
         IDLE : begin
-            despense<=0;
-            if(coin_05) state=s05;
-            else if (coin_10) state=s10;
-            
+            if(coin_05) state <= s05;
+            else if (coin_10) state <= s10;
         end
 
         s05 : begin
-            despense<=0
-        if(coin_05) state =s10;
-        else if (coin_10) begin 
-            state=IDLE;
-             despense<=1;
-        end 
+            if(coin_05) state <= s10;
+            else if (coin_10) begin 
+                state <= IDLE;
+                despense <= 1;
+            end 
         end
         
-        s10: if(coin_05 ||coin_10)
-        despense <=1;
-        state <=LDLE;
-        default state <=LDLE;
+        s10: begin
+            if(coin_05 || coin_10) despense <= 1;
+            state <= IDLE;
+        end
+        default: state <= IDLE;
 
         endcase
     end
@@ -405,7 +405,7 @@ endmodule
 
 module fixed_arbiter(
     input [2:0] req,
-    output reg [2:0] grant
+    output [2:0] grant
 );
 assign grant[0] = req[0];
 assign grant[1] = ~req[0] & req[1];
@@ -446,42 +446,35 @@ module pulse_sync(
     input pluse_a,
     input clk_b,
     input rst_n_b,
-    output reg pluse_b
+    output pluse_b
 
-),
-reg q1,q2;
-reg toggle_a
+);
+reg q1,q2,q3;
+reg toggle_a;
 always @(posedge clk_a or negedge rst_n_a)begin 
-    if(!rst_a)begin
+    if(!rst_n_a)begin
         toggle_a<=0;
     end
     else if(pluse_a)begin
         toggle_a<=~toggle_a;
 
     end
-    
-
-    always @(posedge clk_b or negedge rst_n_b)begin
-        if (!rst_n_b)begin
-            q1<=0;
-            q2<=0;
-            pluse_b<=0;
-        end
-        else begin 
-            q1<= toggle_a;
-            q2<=q1;
-        end
-    end
 end
-reg q3;
+
 always @(posedge clk_b or negedge rst_n_b)begin
-    if(!rst_n_b)begin q3<=0;
+    if (!rst_n_b)begin
+        q1<=0;
+        q2<=0;
+        q3<=0;
     end
-    else begin
+    else begin 
+        q1<= toggle_a;
+        q2<=q1;
         q3<=q2;
     end
-    assign pluse_b =q2^q3;
 end
+
+assign pluse_b =q2^q3;
 endmodule
 
 module uart_tx(
@@ -511,10 +504,10 @@ always @(posedge clk or negedge rst_n)begin
             tx<=shift_reg[0];
             shift_reg<={1'b1,shift_reg[9:1]};
             bit_count<=bit_count+1;
-            else begin
-                busy<=0;
-                bit_count<=0;
-            end
+        end
+        else begin
+            busy<=0;
+            bit_count<=0;
         end
     end
 end
@@ -533,14 +526,13 @@ reg sda_d;
 always @(posedge clk or negedge rst_n)begin
     if(!rst_n)begin
         sda_d<=1;  
-        scl=0;
     end
     else begin 
         sda_d<=sda;
     end
     
 end
-assign start_flag = scl&(sda_d&sda);
+assign start_flag = scl&(sda_d&~sda);
 assign stop_flag = scl&(~sda_d&sda);
 endmodule
 
@@ -556,7 +548,7 @@ module sync_fifo(
 );
 reg [7:0] fifo [15:0];
 reg [3:0] wr,rd;
-reg [3:0] count;
+reg [4:0] count;
 assign empty = (count==0);
 assign full = (count==16);
 always @(posedge clk or negedge rst_n)begin
@@ -566,7 +558,7 @@ always @(posedge clk or negedge rst_n)begin
         wr<=0;
     end
     else begin
-    case(wr_en&&!full,rd_en&&!empty)
+    case({wr_en&&!full,rd_en&&!empty})
         2'b10:begin
         fifo[wr]<=din;
         wr<=wr+1;
@@ -576,7 +568,7 @@ always @(posedge clk or negedge rst_n)begin
         2'b01:begin
             dout<=fifo[rd];
             rd<=rd+1;
-            count<=count-1
+            count<=count-1;
         end
         2'b11:begin
             fifo[wr]<=din;
